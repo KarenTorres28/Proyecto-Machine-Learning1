@@ -240,6 +240,132 @@ button[kind="primary"]:hover, [data-testid="stBaseButton-primary"]:hover, .stDow
 .sway{transform-box:fill-box;transform-origin:50% 100%;animation:mecer 6s ease-in-out infinite alternate;}
 @keyframes mecer{from{transform:rotate(-2.5deg)}to{transform:rotate(2.5deg)}}
 .pie{text-align:center;color:#c9d8e6;font-size:.82rem;padding:.6rem 0 .2rem 0;}
+
+/* ==========================================
+   CORRECCIONES DE FONDOS Y CONTRASTE
+   ========================================== */
+
+/* Mantener transparentes los contenedores generales de Streamlit */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"],
+[data-testid="stVerticalBlock"],
+[data-testid="stHorizontalBlock"],
+[data-testid="column"] {
+    background-color: transparent !important;
+}
+
+/* Área de carga de archivos */
+[data-testid="stFileUploaderDropzone"],
+[data-testid="stFileUploadDropzone"] {
+    background: rgba(12,18,45,.72) !important;
+    color: #e9eefb !important;
+    border: 1.5px dashed rgba(244,201,93,.65) !important;
+    border-radius: 10px !important;
+}
+
+/* Botón Upload: amarillo Viridis con texto oscuro */
+[data-testid="stFileUploader"] button {
+    background: #fde725 !important;
+    color: #10162f !important;
+    border: 1px solid #fde725 !important;
+    border-radius: 8px !important;
+}
+
+[data-testid="stFileUploader"] button * {
+    color: #10162f !important;
+    fill: #10162f !important;
+}
+
+[data-testid="stFileUploader"] button:hover {
+    background: #d5e51e !important;
+    border-color: #d5e51e !important;
+}
+
+/* Texto secundario del cargador */
+[data-testid="stFileUploaderDropzone"] small,
+[data-testid="stFileUploaderDropzone"] span {
+    color: #cdd7ee !important;
+}
+
+/* Inputs de texto y numéricos, si se usan */
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input,
+.stTextArea textarea {
+    background-color: rgba(12,18,45,.85) !important;
+    color: #e9eefb !important;
+    border: 1px solid rgba(255,255,255,.2) !important;
+}
+
+/* Tablas */
+[data-testid="stTable"],
+[data-testid="stDataFrame"] {
+    background-color: rgba(12,18,45,.65) !important;
+    color: #e9eefb !important;
+}
+
+[data-testid="stTable"] table,
+[data-testid="stTable"] th,
+[data-testid="stTable"] td {
+    background-color: transparent !important;
+    color: #e9eefb !important;
+    border-color: rgba(255,255,255,.15) !important;
+}
+
+/* Métricas, en caso de incorporarlas */
+[data-testid="stMetric"] {
+    background-color: rgba(12,18,45,.58) !important;
+    border: 1px solid rgba(255,255,255,.13) !important;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+[data-testid="stMetric"] * {
+    color: #e9eefb !important;
+}
+
+/* Expanders */
+[data-testid="stExpander"],
+[data-testid="stExpander"] details {
+    background-color: rgba(12,18,45,.65) !important;
+    border-color: rgba(255,255,255,.15) !important;
+}
+
+/* Mensajes de alerta nativos */
+[data-testid="stAlert"] {
+    background-color: rgba(10,16,40,.85) !important;
+    color: #e9eefb !important;
+    border: 1px solid rgba(255,255,255,.15) !important;
+}
+
+/* ==========================================
+   MENSAJE PERSONALIZADO CUANDO NO HAY ARCHIVO
+   ========================================== */
+.aviso-vacio {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 1.2rem 1.5rem;
+    margin-top: .8rem;
+    background: rgba(12,18,45,.72);
+    border: 1px solid rgba(94,201,98,.45);
+    border-left: 4px solid #5ec962;
+    border-radius: 10px;
+    color: #e9eefb;
+    font-size: .95rem;
+    line-height: 1.5;
+}
+
+.aviso-vacio b {
+    color: #fde725;
+}
+
+.aviso-icono {
+    font-size: 1.6rem;
+    color: #5ec962;
+}
 """
 
 
@@ -658,7 +784,15 @@ if df_crudo is not None:
             use_container_width=True
         )
 else:
-    st.info("Sube un archivo CSV o usa **Cargar datos de ejemplo** en el panel lateral para comenzar.")
+    st.markdown("""
+    <div class="aviso-vacio">
+        <span class="aviso-icono">☁</span>
+        <span>
+            Sube un archivo CSV o usa <b>Cargar datos de ejemplo</b>
+            en el panel lateral para comenzar.
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================================
 # PIE DE PÁGINA
