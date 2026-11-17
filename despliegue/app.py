@@ -341,6 +341,60 @@ button[kind="primary"]:hover, [data-testid="stBaseButton-primary"]:hover, .stDow
 }
 
 /* ==========================================
+   FORZAR TEMA OSCURO EN COMPONENTES STREAMLIT
+   ========================================== */
+
+/* Alertas: info, success, warning y error */
+[data-testid="stAlert"],
+[data-testid="stAlert"] > div,
+[data-testid="stAlert"] div[role="alert"] {
+    background: rgba(12,18,45,.92) !important;
+    color: #e9eefb !important;
+    border: 1px solid rgba(255,255,255,.18) !important;
+}
+
+/* Cargador CSV: todos sus contenedores */
+[data-testid="stFileUploader"],
+[data-testid="stFileUploader"] > section,
+[data-testid="stFileUploaderDropzone"],
+[data-testid="stFileUploaderDropzone"] > div,
+[data-testid="stFileUploaderDropzone"] > section {
+    background: rgba(12,18,45,.85) !important;
+    color: #e9eefb !important;
+}
+
+/* Botón interno del cargador */
+[data-testid="stFileUploader"] button {
+    background: #fde725 !important;
+    color: #10162f !important;
+}
+
+/* Texto e iconos del cargador */
+[data-testid="stFileUploader"] svg {
+    color: #cdd7ee !important;
+}
+
+/* Mensajes y contenedores */
+.stApp [data-testid="stMarkdownContainer"] {
+    color: #e9eefb;
+}
+
+/* Eliminar fondos blancos de contenedores BaseWeb */
+[data-baseweb="notification"],
+[data-baseweb="card"] {
+    background: rgba(12,18,45,.90) !important;
+    color: #e9eefb !important;
+}
+
+/* Fondo general */
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"] {
+    background-color: transparent !important;
+}
+
+
+/* ==========================================
    MENSAJE PERSONALIZADO CUANDO NO HAY ARCHIVO
    ========================================== */
 .aviso-vacio {
