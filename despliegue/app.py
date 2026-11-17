@@ -1,7 +1,7 @@
 """
 Aplicación Web Interactiva en Streamlit para el Despliegue de F-KNN
 Imputación de Series de Tiempo Meteorológicas — Aranzazu, Caldas
-Tema visual: cielo, estrellas, nubes, sol y plantas. Gráficas Plotly con paleta Viridis.
+Gráficas Plotly con paleta Viridis.
 """
 import json
 from pathlib import Path
@@ -43,69 +43,60 @@ VIRIDIS_TEAL = "#21918c"
 VIRIDIS_GREEN = "#5ec962"
 VIRIDIS_YELLOW = "#fde725"
 
-# Un icono por sensor (solo decorativo)
-ICONOS = {
-    "Indoor Temperature(°C)": "🏠",
-    "Indoor Humidity(%)": "🏡",
-    "Outdoor Temperature(°C)": "🌡️",
-    "Outdoor Humidity(%)": "💧",
-    "Absolute Pressure(hpa)": "🧭",
-    "Wind Speed(km/h)": "🍃",
-    "Gust(km/h)": "🌬️",
-    "DewPoint(°C)": "🌫️",
-    "WindChill(°C)": "❄️",
-    "Hour Rainfall(mm)": "🌧️",
-    "Light(lux)": "☀️",
-}
-
 # ==========================================
 # ESTILOS (CSS)
 # ==========================================
 CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
 
-/* ---------- Fondo: cielo que va de noche a amanecer ---------- */
+:root{
+    --texto:#e9eefb;
+    --suave:#a9b6d6;
+    --sol:#f4c95d;
+    --panel:rgba(12,18,45,.58);
+    --borde:rgba(255,255,255,.13);
+}
+
+/* ---------- Fondo: cielo de noche a atardecer ---------- */
 .stApp{
-    background: linear-gradient(180deg,#0b1026 0%,#141c47 30%,#27407a 62%,#2f6f8f 85%,#21918c 100%);
-    background-attachment: fixed;
+    background:linear-gradient(180deg,#0c1230 0%,#19244f 45%,#2a3f6b 80%,#3b5a73 100%);
+    background-attachment:fixed;
+    font-family:'DM Sans',sans-serif;
 }
 header[data-testid="stHeader"]{background:transparent;}
 #MainMenu, footer{visibility:hidden;}
 
-/* ---------- Estrellas (dos capas con titileo) ---------- */
+/* ---------- Estrellas ---------- */
 .stApp::before, .stApp::after{
     content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-    -webkit-mask-image:linear-gradient(#000 25%,transparent 80%);
-    mask-image:linear-gradient(#000 25%,transparent 80%);
+    -webkit-mask-image:linear-gradient(#000 20%,transparent 75%);
+    mask-image:linear-gradient(#000 20%,transparent 75%);
 }
 .stApp::before{
     background-image:
         radial-gradient(1.5px 1.5px at 40px 60px,#fff,transparent),
-        radial-gradient(1px 1px at 130px 120px,#fde725,transparent),
-        radial-gradient(2px 2px at 210px 40px,#fff,transparent),
+        radial-gradient(1px 1px at 130px 120px,#f4e3a8,transparent),
+        radial-gradient(1.5px 1.5px at 210px 40px,#fff,transparent),
         radial-gradient(1px 1px at 90px 200px,#fff,transparent),
-        radial-gradient(1.5px 1.5px at 260px 170px,#cfe3ff,transparent),
-        radial-gradient(1px 1px at 180px 260px,#fff,transparent);
-    background-size:300px 300px;
-    animation:titilar 5s ease-in-out infinite alternate;
+        radial-gradient(1px 1px at 260px 170px,#cfe0ff,transparent);
+    background-size:320px 320px;
+    animation:titilar 8s ease-in-out infinite alternate;
 }
 .stApp::after{
     background-image:
         radial-gradient(1px 1px at 70px 90px,#fff,transparent),
-        radial-gradient(2px 2px at 300px 150px,#fde725,transparent),
-        radial-gradient(1.5px 1.5px at 150px 330px,#fff,transparent),
-        radial-gradient(1px 1px at 380px 40px,#cfe3ff,transparent),
-        radial-gradient(1px 1px at 240px 230px,#fff,transparent);
-    background-size:430px 430px;
-    animation:titilar 7s ease-in-out -2s infinite alternate;
+        radial-gradient(1.5px 1.5px at 300px 150px,#f4e3a8,transparent),
+        radial-gradient(1px 1px at 150px 330px,#fff,transparent),
+        radial-gradient(1px 1px at 380px 40px,#cfe0ff,transparent);
+    background-size:450px 450px;
+    animation:titilar 11s ease-in-out -3s infinite alternate;
 }
-@keyframes titilar{from{opacity:.25}to{opacity:1}}
+@keyframes titilar{from{opacity:.2}to{opacity:.85}}
 
-/* ---------- Nubes que se desplazan ---------- */
+/* ---------- Nubes ---------- */
 .nube{
     position:fixed;width:200px;height:56px;border-radius:100px;
-    background:rgba(255,255,255,.10);filter:blur(1.5px);
-    pointer-events:none;z-index:1;scale:var(--s,1);
+    background:rgba(255,255,255,.07);pointer-events:none;z-index:1;scale:var(--s,1);
     animation:derivar linear infinite;
 }
 .nube::before,.nube::after{content:"";position:absolute;background:inherit;border-radius:50%;}
@@ -113,150 +104,142 @@ header[data-testid="stHeader"]{background:transparent;}
 .nube::after{width:120px;height:120px;top:-62px;right:26px;}
 @keyframes derivar{from{transform:translateX(-380px)}to{transform:translateX(112vw)}}
 
-/* ---------- Contenido principal ---------- */
-.block-container{position:relative;z-index:2;max-width:1200px;padding-top:2rem;padding-bottom:2rem;}
-.stMarkdown, .stMarkdown p, label, .stSelectbox, .stButton button, .stDownloadButton button{
-    font-family:'Nunito',sans-serif;
+/* ---------- Contenedor ---------- */
+.block-container{position:relative;z-index:2;max-width:1150px;padding-top:2.2rem;padding-bottom:2rem;}
+
+/* ---------- Color de texto de los elementos nativos de Streamlit ---------- */
+.stApp [data-testid="stMarkdownContainer"] p,
+.stApp [data-testid="stMarkdownContainer"] li,
+.stApp [data-testid="stMarkdownContainer"] strong,
+.stApp [data-testid="stMarkdownContainer"] em,
+.stApp [data-testid="stMarkdownContainer"] h1,
+.stApp [data-testid="stMarkdownContainer"] h2,
+.stApp [data-testid="stMarkdownContainer"] h3,
+.stApp [data-testid="stMarkdownContainer"] h4,
+.stApp [data-testid="stWidgetLabel"] p,
+.stApp [data-testid="stWidgetLabel"] label,
+.stApp [data-testid="stCaptionContainer"] *,
+.stApp [data-testid="stFileUploader"] *,
+.stApp [data-testid="stExpander"] summary *,
+.stApp [data-testid="stSpinner"] *,
+.stApp [data-testid="stAlert"] *,
+.stApp [data-testid="stTable"] *{
+    color:var(--texto);
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Encabezado principal ---------- */
 .hero{
-    display:flex;align-items:center;gap:2.2rem;flex-wrap:wrap;
-    padding:2rem 2.4rem;margin-bottom:1.8rem;border-radius:26px;
-    background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
-    border:1px solid rgba(255,255,255,.18);
-    box-shadow:0 18px 50px rgba(0,0,0,.35);
-    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    position:relative;padding:2.2rem 2.4rem 2rem 2.4rem;margin-bottom:1.5rem;
+    background:var(--panel);border:1px solid var(--borde);border-radius:12px;
 }
-.hero-sol{position:relative;width:120px;height:120px;flex:0 0 120px;margin:20px;}
+.hero-sol{position:absolute;top:34px;right:56px;width:84px;height:84px;}
 .rayos{
-    position:absolute;inset:-34px;border-radius:50%;
-    background:repeating-conic-gradient(from 0deg,rgba(253,231,37,.65) 0deg 5deg,transparent 5deg 22deg);
-    -webkit-mask-image:radial-gradient(circle,#000 38%,transparent 70%);
-    mask-image:radial-gradient(circle,#000 38%,transparent 70%);
-    animation:girar 50s linear infinite;
+    position:absolute;inset:-30px;border-radius:50%;
+    background:repeating-conic-gradient(from 0deg,rgba(244,201,93,.45) 0deg 3deg,transparent 3deg 18deg);
+    -webkit-mask-image:radial-gradient(circle,#000 35%,transparent 70%);
+    mask-image:radial-gradient(circle,#000 35%,transparent 70%);
+    animation:girar 90s linear infinite;
 }
 .sol{
     position:absolute;inset:0;border-radius:50%;
-    background:radial-gradient(circle at 35% 35%,#fffbc2,#fde725 55%,#f5a300);
-    box-shadow:0 0 40px 10px rgba(253,231,37,.45),0 0 120px 40px rgba(253,231,37,.18);
-    animation:pulso 5s ease-in-out infinite;
+    background:radial-gradient(circle at 38% 36%,#fbe39a,#f4c95d 60%,#e2a93b);
+    box-shadow:0 0 50px 8px rgba(244,201,93,.28);
 }
 @keyframes girar{to{transform:rotate(360deg)}}
-@keyframes pulso{50%{transform:scale(1.06)}}
-.hero-texto{flex:1;min-width:280px;}
-.insignia{
-    display:inline-block;padding:.3rem .9rem;border-radius:999px;font-size:.82rem;font-weight:700;
-    background:rgba(253,231,37,.15);color:#fde725;border:1px solid rgba(253,231,37,.4);
+.kicker{font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sol);}
+.stApp .hero h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:2.35rem;line-height:1.15;
+    color:#fff;margin:.6rem 0 .8rem 0;padding:0;max-width:640px;
 }
-.hero h1{
-    font-family:'Poppins',sans-serif;font-weight:800;font-size:2.3rem;line-height:1.15;
-    margin:.7rem 0 .5rem 0;padding:0;
-    background:linear-gradient(90deg,#ffffff,#fde725 60%,#5ec962);
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-}
-.hero p{color:#dbe7ff;font-size:1.02rem;margin:0 0 .9rem 0;}
-.chips span{
-    display:inline-block;margin:0 .45rem .45rem 0;padding:.28rem .8rem;border-radius:999px;
-    font-size:.82rem;font-weight:700;color:#eaf2ff;
-    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
-}
+.stApp .hero p{color:#cdd7ee;font-size:1rem;line-height:1.6;max-width:640px;margin:0;}
+@media (max-width:760px){.hero-sol{display:none;}}
 
-/* ---------- Encabezados de sección ---------- */
-.sec{display:flex;align-items:center;gap:.9rem;margin:2.2rem 0 1rem 0;}
-.sec-ico{
-    width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;
-    border-radius:16px;background:linear-gradient(135deg,rgba(253,231,37,.25),rgba(94,201,98,.2));
-    border:1px solid rgba(255,255,255,.25);
-}
-.sec-t{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.35rem;color:#fff;}
-.sec-s{font-size:.9rem;color:#b9c9ee;}
+/* ---------- Secciones ---------- */
+.sec{margin:2.4rem 0 1rem 0;padding-bottom:.6rem;border-bottom:1px solid var(--borde);}
+.sec-top{display:flex;align-items:baseline;gap:.9rem;}
+.sec-n{font-family:'Fraunces',serif;font-size:1.05rem;color:var(--sol);}
+.sec-t{font-family:'Fraunces',serif;font-weight:600;font-size:1.45rem;color:#fff;}
+.sec-s{font-size:.9rem;color:var(--suave);margin-top:.25rem;}
 
-/* ---------- Tarjetas KPI ---------- */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin-bottom:1.2rem;}
+/* ---------- Indicadores ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.9rem;margin-bottom:1.2rem;}
 .kpi{
-    padding:1.1rem 1.2rem;border-radius:20px;text-align:center;
-    background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.05));
-    border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 30px rgba(0,0,0,.25);
-    transition:transform .25s ease, box-shadow .25s ease;
+    padding:1rem 1.2rem;background:var(--panel);border:1px solid var(--borde);
+    border-left:3px solid var(--sol);border-radius:8px;
 }
-.kpi:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(0,0,0,.35);}
-.kpi-i{font-size:1.7rem;}
-.kpi-v{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.7rem;color:#fde725;margin:.2rem 0;}
-.kpi-v.sm{font-size:1.05rem;line-height:2.1rem;}
-.kpi-l{font-size:.82rem;font-weight:700;color:#b9c9ee;text-transform:uppercase;letter-spacing:.06em;}
+.kpi-l{font-size:.74rem;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.09em;}
+.kpi-v{font-family:'Fraunces',serif;font-weight:500;font-size:1.9rem;color:#fff;margin-top:.25rem;}
+.kpi-v.sm{font-size:1.1rem;line-height:2.4rem;}
 
-/* ---------- Pastilla de datos activos ---------- */
-.pastilla{
-    display:inline-block;padding:.55rem 1.1rem;border-radius:14px;margin:.2rem 0 .6rem 0;
-    background:rgba(94,201,98,.15);border:1px solid rgba(94,201,98,.45);color:#d9ffd9;font-weight:700;
+.archivo{
+    margin:.3rem 0 .8rem 0;padding:.5rem 1rem;border-left:3px solid var(--sol);
+    background:var(--panel);border-radius:0 8px 8px 0;color:var(--texto);font-size:.92rem;
 }
 
-/* ---------- Widgets de Streamlit ---------- */
+/* ---------- Widgets ---------- */
 [data-testid="stFileUploaderDropzone"], [data-testid="stFileUploadDropzone"]{
-    background:rgba(255,255,255,.07);border:2px dashed rgba(253,231,37,.55);border-radius:20px;
+    background:var(--panel);border:1.5px dashed rgba(244,201,93,.55);border-radius:10px;
 }
+[data-testid="stFileUploaderFile"]{background:rgba(255,255,255,.08);border-radius:8px;}
 [data-testid="stAlert"]{
-    border-radius:16px;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);
+    background:rgba(10,16,40,.75) !important;border:1px solid var(--borde);border-radius:10px;
 }
-[data-testid="stExpander"]{
-    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:16px;
-}
+[data-testid="stExpander"]{background:var(--panel);border:1px solid var(--borde);border-radius:10px;}
+[data-testid="stExpander"] details{border:none;background:transparent;}
 [data-testid="stPlotlyChart"]{
-    background:linear-gradient(160deg,rgba(255,255,255,.10),rgba(255,255,255,.03));
-    border:1px solid rgba(255,255,255,.18);border-radius:22px;padding:.6rem;
-    box-shadow:0 12px 34px rgba(0,0,0,.3);
+    background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:.5rem;
 }
+
+/* Selector desplegable */
+[data-baseweb="select"] > div{
+    background:rgba(12,18,45,.75);border:1px solid rgba(255,255,255,.22);border-radius:8px;
+}
+[data-baseweb="select"] *{color:var(--texto) !important;}
+[data-baseweb="popover"] ul, [data-baseweb="popover"] [data-baseweb="menu"]{background:#121a3d !important;}
+[data-baseweb="popover"] li, [data-baseweb="popover"] li *{color:var(--texto) !important;}
+[data-baseweb="popover"] li:hover{background:rgba(255,255,255,.1) !important;}
+
+/* Tabla */
+.stApp [data-testid="stTable"] table{background:transparent;border-collapse:collapse;width:100%;}
+.stApp [data-testid="stTable"] th{background:rgba(255,255,255,.08);}
+.stApp [data-testid="stTable"] th, .stApp [data-testid="stTable"] td{border-bottom:1px solid var(--borde);}
+
+/* Botones */
 .stButton button, .stDownloadButton button{
-    border-radius:14px;font-weight:800;padding:.6rem 1rem;
-    background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3);
-    transition:transform .2s ease, box-shadow .2s ease;
+    border-radius:8px;font-weight:700;padding:.55rem 1rem;
+    background:transparent;color:var(--texto);border:1px solid rgba(255,255,255,.35);
 }
-.stButton button:hover, .stDownloadButton button:hover{
-    transform:translateY(-2px);border-color:#fde725;color:#fde725;
-}
+.stButton button:hover{border-color:var(--sol);color:var(--sol);}
 button[kind="primary"], [data-testid="stBaseButton-primary"], .stDownloadButton button{
-    background:linear-gradient(90deg,#fde725,#5ec962);color:#0b1026 !important;border:none;
-    box-shadow:0 8px 22px rgba(253,231,37,.3);
+    background:var(--sol);color:#10162f;border:1px solid var(--sol);
 }
 button[kind="primary"]:hover, [data-testid="stBaseButton-primary"]:hover, .stDownloadButton button:hover{
-    color:#0b1026 !important;box-shadow:0 12px 28px rgba(253,231,37,.5);
+    background:#f8d98a;color:#10162f;border-color:#f8d98a;
 }
+.stButton button p, .stDownloadButton button p{color:inherit !important;}
 
 /* ---------- Barra lateral ---------- */
 [data-testid="stSidebar"]{
-    background:linear-gradient(180deg,#0b1026 0%,#16204a 55%,#134e4a 100%);
-    border-right:1px solid rgba(255,255,255,.1);
+    background:linear-gradient(180deg,#0b1129 0%,#142046 70%,#18334a 100%);
+    border-right:1px solid var(--borde);
 }
-.marca{display:flex;align-items:center;gap:.8rem;margin-bottom:1rem;}
-.luna{
-    width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;
-    border-radius:50%;background:rgba(255,255,255,.1);box-shadow:0 0 22px rgba(207,227,255,.45);
+.lado-t{font-family:'Fraunces',serif;font-size:1.25rem;font-weight:600;color:#fff;}
+.lado-s{font-size:.82rem;color:var(--suave);margin-bottom:1.1rem;}
+.lado-h{
+    font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--sol);margin:1.2rem 0 .4rem 0;
 }
-.marca-t{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.15rem;color:#fff;}
-.marca-s{font-size:.82rem;color:#b9c9ee;}
-.lado{
-    padding:.85rem 1rem;margin-bottom:.8rem;border-radius:16px;font-size:.88rem;color:#e3ecff;
-    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
-}
-.lado b{color:#fde725;}
-.lado small{display:block;margin-top:.5rem;color:#9fb3df;}
-.lado code{color:#5ec962;background:rgba(0,0,0,.25);padding:.1rem .4rem;border-radius:6px;}
-.mini{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.8rem;}
-.mini div{
-    padding:.7rem;border-radius:14px;text-align:center;font-size:.8rem;color:#b9c9ee;
-    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
-}
-.mini strong{display:block;color:#fde725;font-size:1rem;margin-top:.25rem;}
-[data-testid="stSidebar"] [data-testid="stImage"] img{
-    background:#fff;border-radius:12px;padding:8px;
-}
+.lado-p{font-size:.88rem;color:var(--texto);line-height:1.5;}
+.fila{display:flex;justify-content:space-between;gap:.8rem;font-size:.84rem;padding:.28rem 0;border-bottom:1px solid var(--borde);}
+.fila .k{color:var(--suave);}
+.fila .v{color:var(--texto);text-align:right;}
+[data-testid="stSidebar"] [data-testid="stImage"] img{background:#fff;border-radius:8px;padding:8px;}
 
 /* ---------- Plantas al pie ---------- */
 .paisaje{width:100%;height:120px;display:block;margin-top:3rem;}
-.sway{transform-box:fill-box;transform-origin:50% 100%;animation:mecer 4s ease-in-out infinite alternate;}
-@keyframes mecer{from{transform:rotate(-3.5deg)}to{transform:rotate(3.5deg)}}
-.pie{text-align:center;color:#d7f5e6;font-size:.85rem;padding:.6rem 0 .2rem 0;font-weight:600;}
+.sway{transform-box:fill-box;transform-origin:50% 100%;animation:mecer 6s ease-in-out infinite alternate;}
+@keyframes mecer{from{transform:rotate(-2.5deg)}to{transform:rotate(2.5deg)}}
+.pie{text-align:center;color:#c9d8e6;font-size:.82rem;padding:.6rem 0 .2rem 0;}
 """
 
 
@@ -270,11 +253,11 @@ def inyectar_estilos():
 
 
 def nubes_de_fondo():
-    """Tres nubes semitransparentes que cruzan la pantalla a distintas alturas y velocidades."""
+    """Tres nubes tenues que cruzan la pantalla lentamente."""
     nubes = [
-        ("top:12%;--s:1.2;animation-duration:70s;animation-delay:-10s;"),
-        ("top:30%;--s:0.8;animation-duration:95s;animation-delay:-55s;"),
-        ("top:52%;--s:1.5;animation-duration:120s;animation-delay:-30s;"),
+        "top:12%;--s:1.2;animation-duration:110s;animation-delay:-20s;",
+        "top:30%;--s:0.8;animation-duration:140s;animation-delay:-80s;",
+        "top:52%;--s:1.5;animation-duration:170s;animation-delay:-50s;",
     ]
     html = "".join(f'<div class="nube" style="{estilo}"></div>' for estilo in nubes)
     st.markdown(html, unsafe_allow_html=True)
@@ -283,59 +266,64 @@ def nubes_de_fondo():
 def paisaje_plantas():
     """SVG con colinas y plantas que se mecen suavemente."""
     plantas = []
-    for k, x in enumerate(range(30, 1200, 70)):
-        h = 38 + (k * 17) % 34
+    for k, x in enumerate(range(40, 1200, 85)):
+        h = 36 + (k * 17) % 34
         y0, yc, ym = 120, 120 - h, 120 - h * 0.55
-        retraso = -(k % 5) * 0.8
+        tallo, hoja, punta = ("#2f6b4f", "#3f8a5f", "#5aa578") if k % 2 else ("#285c45", "#357852", "#4d9468")
+        retraso = -(k % 5) * 1.1
         plantas.append(
             f'<g class="sway" style="animation-delay:{retraso:.1f}s">'
-            f'<path d="M{x} {y0} Q{x + 7} {y0 - h / 2:.0f} {x} {yc:.0f}" stroke="#3ea66b" '
+            f'<path d="M{x} {y0} Q{x + 7} {y0 - h / 2:.0f} {x} {yc:.0f}" stroke="{tallo}" '
             f'stroke-width="3" fill="none" stroke-linecap="round"/>'
-            f'<ellipse cx="{x - 10}" cy="{ym:.0f}" rx="10" ry="4.5" fill="#5ec962" '
+            f'<ellipse cx="{x - 10}" cy="{ym:.0f}" rx="10" ry="4.5" fill="{hoja}" '
             f'transform="rotate(-35 {x - 10} {ym:.0f})"/>'
-            f'<ellipse cx="{x + 10}" cy="{ym - 8:.0f}" rx="10" ry="4.5" fill="#5ec962" '
+            f'<ellipse cx="{x + 10}" cy="{ym - 8:.0f}" rx="10" ry="4.5" fill="{hoja}" '
             f'transform="rotate(35 {x + 10} {ym - 8:.0f})"/>'
-            f'<ellipse cx="{x}" cy="{yc - 6:.0f}" rx="4.5" ry="10" fill="#8fe388"/>'
+            f'<ellipse cx="{x}" cy="{yc - 6:.0f}" rx="4.5" ry="10" fill="{punta}"/>'
             f'</g>'
         )
     svg = (
         '<svg class="paisaje" viewBox="0 0 1200 120" preserveAspectRatio="xMidYMax slice" '
         'xmlns="http://www.w3.org/2000/svg">'
-        '<path d="M0 120 L0 80 Q150 50 320 76 T640 70 T960 64 T1200 74 L1200 120Z" fill="#12474a"/>'
+        '<path d="M0 120 L0 80 Q150 50 320 76 T640 70 T960 64 T1200 74 L1200 120Z" fill="#14333a"/>'
         + "".join(plantas) +
-        '<path d="M0 120 L0 106 Q200 96 420 108 T820 104 T1200 108 L1200 120Z" fill="#0c3335"/>'
+        '<path d="M0 120 L0 106 Q200 96 420 108 T820 104 T1200 108 L1200 120Z" fill="#0d262b"/>'
         '</svg>'
     )
     st.markdown(svg, unsafe_allow_html=True)
 
 
-def seccion(icono, titulo, subtitulo=""):
+def seccion(numero, titulo, subtitulo=""):
     st.markdown(
-        f'<div class="sec"><div class="sec-ico">{icono}</div><div>'
-        f'<div class="sec-t">{titulo}</div><div class="sec-s">{subtitulo}</div></div></div>',
+        f'<div class="sec"><div class="sec-top"><span class="sec-n">{numero}</span>'
+        f'<span class="sec-t">{titulo}</span></div>'
+        f'<div class="sec-s">{subtitulo}</div></div>',
         unsafe_allow_html=True
     )
 
 
 def tarjetas_kpi(items):
-    """items: lista de (icono, etiqueta, valor)."""
+    """items: lista de (etiqueta, valor)."""
     cuerpo = "".join(
-        f'<div class="kpi"><div class="kpi-i">{ico}</div>'
-        f'<div class="kpi-v{" sm" if len(str(val)) > 14 else ""}">{val}</div>'
-        f'<div class="kpi-l">{lab}</div></div>'
-        for ico, lab, val in items
+        f'<div class="kpi"><div class="kpi-l">{lab}</div>'
+        f'<div class="kpi-v{" sm" if len(str(val)) > 14 else ""}">{val}</div></div>'
+        for lab, val in items
     )
     st.markdown(f'<div class="kpis">{cuerpo}</div>', unsafe_allow_html=True)
 
 
+def fila(clave, valor):
+    return f'<div class="fila"><span class="k">{clave}</span><span class="v">{valor}</span></div>'
+
+
 def estilo_plotly(fig, altura):
-    """Aplica el tema nocturno transparente a cualquier figura de Plotly."""
+    """Aplica fondo transparente y texto claro a cualquier figura de Plotly."""
     fig.update_layout(
         template="plotly_dark",
         height=altura,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Nunito, sans-serif", color="#eaf2ff"),
+        font=dict(family="DM Sans, sans-serif", color="#e9eefb"),
         margin=dict(l=30, r=30, t=60, b=30),
     )
     fig.update_xaxes(gridcolor="rgba(255,255,255,0.08)", zeroline=False)
@@ -381,39 +369,40 @@ variables_modelo = metadata["variables"]
 # ==========================================
 with st.sidebar:
     st.markdown(
-        '<div class="marca"><div class="luna">🌙</div><div>'
-        '<div class="marca-t">Panel de Control F-KNN</div>'
-        '<div class="marca-s">Estación Meteorológica Aranzazu (Caldas)</div></div></div>',
+        '<div class="lado-t">Panel de control</div>'
+        '<div class="lado-s">Estación meteorológica de Aranzazu (Caldas)</div>',
         unsafe_allow_html=True
     )
 
     st.markdown(
-        '<div class="lado"><b>👥 Autores</b><br>Gabriel Castro Benítez<br>Karen Daniela Torres Henao'
-        '<small>Machine Learning 1 · Pregrado en Ciencia de Datos · Universidad Externado de Colombia</small></div>',
+        '<div class="lado-h">Autores</div>'
+        '<div class="lado-p">Gabriel Castro Benítez<br>Karen Daniela Torres Henao<br>'
+        '<span style="color:#a9b6d6">Machine Learning 1 · Pregrado en Ciencia de Datos<br>'
+        'Universidad Externado de Colombia</span></div>',
         unsafe_allow_html=True
     )
 
     st.markdown(
-        f'<div class="lado"><b>⚙️ Configuración del modelo</b><br>'
-        f'<small>Algoritmo</small><code>{metadata["modelo"]}</code>'
-        f'<small>Hiperparámetros</small><code>{metadata["configuracion"]}</code>'
-        f'<small>Frecuencia esperada</small><code>{metadata["frecuencia"]}</code></div>',
+        '<div class="lado-h">Modelo</div>'
+        + fila("Algoritmo", "F-KNN")
+        + fila("Hiperparámetros", metadata["configuracion"])
+        + fila("Frecuencia", metadata["frecuencia"]),
         unsafe_allow_html=True
     )
 
     m_dis = metadata["metricas_prueba_2019"]["disjoint"]
     m_ov = metadata["metricas_prueba_2019"]["overlap"]
-    st.markdown('<div class="lado"><b>📊 Métricas en prueba 2019</b></div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="mini">'
-        f'<div>Disjoint<strong>R² {m_dis["R2_medio"]}</strong>MSE {m_dis["MSE_medio"]}</div>'
-        f'<div>Overlap<strong>R² {m_ov["R2_medio"]}</strong>MSE {m_ov["MSE_medio"]}</div>'
-        f'</div>',
+        '<div class="lado-h">Métricas en prueba 2019</div>'
+        + fila("Disjoint · R²", m_dis["R2_medio"])
+        + fila("Disjoint · MSE", m_dis["MSE_medio"])
+        + fila("Overlap · R²", m_ov["R2_medio"])
+        + fila("Overlap · MSE", m_ov["MSE_medio"]),
         unsafe_allow_html=True
     )
 
-    st.markdown('<div class="lado"><b>💡 Atajos de datos</b></div>', unsafe_allow_html=True)
-    if st.button("📂 Cargar datos de ejemplo (Semana 2019)", use_container_width=True):
+    st.markdown('<div class="lado-h">Datos</div>', unsafe_allow_html=True)
+    if st.button("Cargar datos de ejemplo (semana 2019)", use_container_width=True):
         ejemplo_path = DATA_DIR / "ejemplo_para_probar.csv"
         if ejemplo_path.exists():
             st.session_state["df_crudo"] = pd.read_csv(ejemplo_path, index_col=0, parse_dates=True)
@@ -424,14 +413,14 @@ with st.sidebar:
             st.error("No se encontró el archivo 'data/ejemplo_para_probar.csv'.")
 
     if st.session_state["df_crudo"] is not None:
-        if st.button("🔄 Limpiar / Cargar otro archivo", use_container_width=True):
+        if st.button("Limpiar / cargar otro archivo", use_container_width=True):
             st.session_state["df_crudo"] = None
             st.session_state["origen_datos"] = None
             st.session_state["df_imputado"] = None
             st.rerun()
 
-    # Declaración sobre el uso de Inteligencia Artificial
-    with st.expander("🤖 Uso declarado de IA"):
+    st.markdown('<div class="lado-h">Transparencia</div>', unsafe_allow_html=True)
+    with st.expander("Uso declarado de IA"):
         st.markdown("""
 Durante el diseño, estructuración e implementación de este módulo de despliegue, **utilizamos** la siguiente herramienta de apoyo tecnológico bajo nuestra supervisión directa:
 
@@ -458,35 +447,29 @@ La validación experimental, la verificación del código, la interpretación an
         st.image(str(logo_cd), width=160)
 
 # ==========================================
-# CUERPO PRINCIPAL: HERO
+# ENCABEZADO
 # ==========================================
-st.markdown(limpiar_html(f"""
+st.markdown(limpiar_html("""
 <div class="hero">
 <div class="hero-sol"><div class="rayos"></div><div class="sol"></div></div>
-<div class="hero-texto">
-<span class="insignia">☁️ Estación meteorológica · Aranzazu, Caldas</span>
-<h1>Sistema de Imputación de Sensores Meteorológicos</h1>
-<p>Reconstruimos los valores que dejaron de registrar los sensores usando el modelo ganador
-<b>F-KNN (Focalized K-Nearest Neighbors)</b>, que combina variables correlacionadas
-(correlación de Spearman) con rezagos temporales de la propia serie.</p>
-<div class="chips">
-<span>⭐ F-KNN</span><span>🌿 Correlación de Spearman</span>
-<span>🕐 Rezagos temporales</span><span>🌧️ {metadata['n_variables']} variables</span>
-</div>
-</div>
+<div class="kicker">Estación meteorológica · Aranzazu, Caldas</div>
+<h1>Imputación de datos faltantes en sensores meteorológicos</h1>
+<p>Esta herramienta reconstruye los valores que los sensores dejaron de registrar. Usa el modelo
+F-KNN (Focalized K-Nearest Neighbors), que busca registros parecidos a partir de las variables
+más correlacionadas y de los rezagos de la propia serie.</p>
 </div>
 """), unsafe_allow_html=True)
 
 if not PLOTLY_INSTALLED:
-    st.warning("⚠️ La librería `plotly` no está instalada. Para visualizar las gráficas interactivas, ejecuta en tu terminal: `pip install plotly`.")
+    st.warning("La librería `plotly` no está instalada. Para ver las gráficas interactivas ejecuta: `pip install plotly`.")
 
 # ==========================================
 # SECCIÓN 1: CARGA DE ARCHIVO
 # ==========================================
-seccion("☁️", "1 · Cargar archivo de datos", "Sube el CSV con tus series de tiempo o usa el ejemplo del panel lateral")
+seccion("01", "Cargar archivo", "Sube el CSV con las series de tiempo o usa el ejemplo del panel lateral")
 
 archivo_subido = st.file_uploader(
-    "Sube un archivo CSV con las series de tiempo (frecuencia recomendada de 30 minutos):",
+    "Archivo CSV con las series de tiempo (frecuencia recomendada de 30 minutos):",
     type=["csv"]
 )
 
@@ -508,7 +491,7 @@ df_crudo = st.session_state["df_crudo"]
 
 if df_crudo is not None:
     st.markdown(
-        f'<div class="pastilla">📁 Datos activos: {st.session_state["origen_datos"]}</div>',
+        f'<div class="archivo">Archivo en uso: <b>{st.session_state["origen_datos"]}</b></div>',
         unsafe_allow_html=True
     )
 
@@ -523,17 +506,17 @@ if df_crudo is not None:
     total_faltantes = int(df_preparado.isna().sum().sum())
     pct_faltantes_global = (total_faltantes / total_celdas) * 100
 
-    seccion("🌧️", "2 · Diagnóstico de valores faltantes", "Qué tan completos llegaron los datos de cada sensor")
+    seccion("02", "Diagnóstico de valores faltantes", "Qué tan completos llegaron los datos de cada sensor")
 
     rango_txt = (
         f"{df_preparado.index.min().strftime('%d/%m/%Y')} → "
         f"{df_preparado.index.max().strftime('%d/%m/%Y')}"
     )
     tarjetas_kpi([
-        ("🌤️", "Total observaciones", f"{n_filas:,}"),
-        ("📅", "Rango temporal", rango_txt),
-        ("🕳️", "Celdas faltantes", f"{total_faltantes:,}"),
-        ("📉", "% faltantes global", f"{pct_faltantes_global:.2f} %"),
+        ("Observaciones", f"{n_filas:,}"),
+        ("Rango temporal", rango_txt),
+        ("Celdas faltantes", f"{total_faltantes:,}"),
+        ("% faltantes global", f"{pct_faltantes_global:.2f} %"),
     ])
 
     faltantes_col = df_preparado.isna().sum()
@@ -554,7 +537,7 @@ if df_crudo is not None:
             orientation="h",
             color="% Faltante",
             color_continuous_scale="Viridis",
-            title="Porcentaje de valores faltantes por sensor meteorológico",
+            title="Porcentaje de valores faltantes por sensor",
             labels={"% Faltante": "% de faltantes", "Variable": "Sensor"},
             text="% Faltante"
         )
@@ -567,21 +550,21 @@ if df_crudo is not None:
         fig_diag.update_xaxes(range=[0, max(df_diag["% Faltante"].max() * 1.25, 1)])
         st.plotly_chart(fig_diag, use_container_width=True)
 
-    with st.expander("🔍 Ver tabla detallada de diagnóstico por sensor"):
-        st.dataframe(df_diag.set_index("Variable").T, use_container_width=True)
+    with st.expander("Ver tabla detallada por sensor"):
+        st.table(df_diag.set_index("Variable"))
 
     # ==========================================
     # SECCIÓN 3: RECONSTRUCCIÓN CON F-KNN
     # ==========================================
-    seccion("⭐", "3 · Reconstrucción con F-KNN", "Rellena los huecos con el pipeline entrenado con los datos de 2018")
+    seccion("03", "Reconstrucción con F-KNN", "Rellena los huecos con el pipeline entrenado con los datos de 2018")
 
     if total_faltantes == 0:
-        st.success("🎉 El dataset no presenta valores faltantes. No se requiere imputación.")
+        st.success("El dataset no presenta valores faltantes. No se requiere imputación.")
         st.session_state["df_imputado"] = df_preparado.copy()
     else:
         col_btn, _ = st.columns([1, 2])
         with col_btn:
-            ejecutar = st.button("🚀 Ejecutar Imputación con Pipeline F-KNN", type="primary", use_container_width=True)
+            ejecutar = st.button("Ejecutar imputación con F-KNN", type="primary", use_container_width=True)
 
         if ejecutar:
             with st.spinner("Reconstruyendo series de tiempo con F-KNN..."):
@@ -604,14 +587,13 @@ if df_crudo is not None:
     # ==========================================
     if st.session_state["df_imputado"] is not None:
         df_res = st.session_state["df_imputado"]
-        st.success(f"✅ ¡Imputación completada con éxito! Se reconstruyeron {total_faltantes:,} celdas.")
+        st.success(f"Imputación completada. Se reconstruyeron {total_faltantes:,} celdas.")
 
-        seccion("🌈", "4 · Inspección visual interactiva", "Los puntos amarillos son los valores estimados por F-KNN")
+        seccion("04", "Inspección visual", "Los puntos amarillos son los valores estimados por F-KNN")
 
         variable_seleccionada = st.selectbox(
-            "Selecciona la variable que deseas inspeccionar:",
-            variables_modelo,
-            format_func=lambda v: f"{ICONOS.get(v, '📈')}  {v}"
+            "Variable a inspeccionar:",
+            variables_modelo
         )
 
         serie_original = df_preparado[variable_seleccionada]
@@ -642,13 +624,13 @@ if df_crudo is not None:
                         symbol="circle",
                         line=dict(color=VIRIDIS_DARK_PURPLE, width=1.5)
                     ),
-                    hovertemplate="<b>⚠️ Imputado F-KNN</b><br><b>Fecha:</b> %{x|%d/%m/%Y %H:%M}<br><b>Valor estimado:</b> %{y:.2f}<extra></extra>"
+                    hovertemplate="<b>Imputado F-KNN</b><br><b>Fecha:</b> %{x|%d/%m/%Y %H:%M}<br><b>Valor estimado:</b> %{y:.2f}<extra></extra>"
                 ))
 
             estilo_plotly(fig, 520)
             fig.update_layout(
                 title=dict(
-                    text=f"{ICONOS.get(variable_seleccionada, '📈')} Reconstrucción temporal de <b>{variable_seleccionada}</b>",
+                    text=f"Reconstrucción temporal de <b>{variable_seleccionada}</b>",
                     font=dict(size=16)
                 ),
                 xaxis=dict(
@@ -666,23 +648,23 @@ if df_crudo is not None:
             st.error("No se pudo renderizar la gráfica interactiva porque `plotly` no está instalado en el entorno.")
 
         # Descarga
-        seccion("🌱", "5 · Descargar datos limpios e imputados", "Archivo CSV con la serie completa reconstruida")
+        seccion("05", "Descargar resultados", "Archivo CSV con la serie completa reconstruida")
         csv_bytes = df_res.to_csv().encode("utf-8")
         st.download_button(
-            label="📥 Descargar CSV Imputado",
+            label="Descargar CSV imputado",
             data=csv_bytes,
             file_name="dataset_meteorologico_imputado_fknn.csv",
             mime="text/csv",
             use_container_width=True
         )
 else:
-    st.info("👆 Por favor sube un archivo CSV o haz clic en **'Cargar datos de ejemplo'** en la barra lateral para comenzar.")
+    st.info("Sube un archivo CSV o usa **Cargar datos de ejemplo** en el panel lateral para comenzar.")
 
 # ==========================================
 # PIE DE PÁGINA
 # ==========================================
 paisaje_plantas()
 st.markdown(
-    '<div class="pie">🌿 Universidad Externado de Colombia · Ciencia de Datos · Machine Learning 1 · 2026</div>',
+    '<div class="pie">Universidad Externado de Colombia · Ciencia de Datos · Machine Learning 1 · 2026</div>',
     unsafe_allow_html=True
 )
